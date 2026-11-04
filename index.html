@@ -409,7 +409,7 @@ document.documentElement.style.setProperty("--blur", C.cardBlur + "px");
 })();
 
 // Фон
-const isVideo = /\.(mp4|webm|mov)$/i.test(C.background);
+const isVideo = /\.(mp4|webm|mov)(\?.*)?$/i.test(C.background);
 if (!C.background) $("bg").innerHTML = '<div class="fallback"></div>';
 else if (isVideo) $("bg").innerHTML = `<video src="${C.background}" autoplay muted loop playsinline></video>`;
 else $("bg").innerHTML = `<img src="${C.background}" alt="">`;
