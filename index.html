@@ -213,7 +213,10 @@
   .socials a:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.5); box-shadow: 0 0 18px var(--glow); }
   .socials svg { width: 20px; height: 20px; fill: currentColor; opacity: .85; }
 
-  .about { text-align: left; line-height: 1.75; color: rgba(236,236,236,.85); font-size: .92rem; white-space: pre-line; }
+  /* «О себе» — мелкая подпись по центру с разрядкой и тонкими линиями по бокам */
+  .about { text-align: center; line-height: 1.75; color: rgba(236,236,236,.65); font-size: .78rem; letter-spacing: .18em; white-space: pre-line;
+    display: flex; align-items: center; gap: 12px; }
+  .about::before, .about::after { content: ""; flex: 1; min-width: 16px; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent); }
 
   .views { margin-top: 20px; font-size: .8rem; color: var(--muted); }
 
