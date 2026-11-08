@@ -209,8 +209,9 @@
     background: transparent; color: var(--muted);
     border: 1px solid var(--border); border-radius: 999px;
     padding: 7px 18px; font: inherit; font-size: .8rem; letter-spacing: .14em; text-transform: lowercase; cursor: pointer;
-    transition: all .2s;
+    transition: all .2s; white-space: nowrap;
   }
+  @media (max-width: 400px) { .tabs button { padding: 7px 13px; letter-spacing: .1em; } }
   .tabs button.active, .tabs button:hover { color: var(--text); border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.05); box-shadow: 0 0 12px rgba(255,255,255,.08); }
   .panel { display: none; animation: fade .35s ease; }
   .panel.active { display: block; }
@@ -233,6 +234,35 @@
   .about { text-align: center; line-height: 1.75; color: rgba(236,236,236,.65); font-size: .78rem; letter-spacing: .18em; white-space: pre-line;
     display: flex; align-items: center; gap: 12px; }
   .about::before, .about::after { content: ""; flex: 1; min-width: 16px; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent); }
+
+  /* «Работы» — три превью в ряд: монохром, при наведении проявляется цвет */
+  .works { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .work {
+    display: block; padding: 6px 6px 10px; border-radius: 14px;
+    color: var(--text); text-decoration: none;
+    background: rgba(255,255,255,.03); border: 1px solid var(--border);
+    transition: transform .3s, border-color .3s, background .3s, box-shadow .3s;
+    animation: fade .45s ease both; animation-delay: calc(var(--i) * 80ms);
+  }
+  .work .th { position: relative; display: block; aspect-ratio: 16 / 10; border-radius: 9px; overflow: hidden; border: 1px solid rgba(255,255,255,.08); }
+  .work img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(1) brightness(.8); transition: filter .5s ease, transform .6s ease; }
+  .work .go {
+    position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%;
+    display: grid; place-items: center; font-size: .7rem; line-height: 1;
+    background: rgba(5,5,5,.6); color: var(--text); border: 1px solid rgba(255,255,255,.18);
+    opacity: 0; transform: translate(-3px, 3px); transition: opacity .3s, transform .3s;
+  }
+  .work b { display: block; margin-top: 8px; font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 1.2rem; line-height: 1.05; letter-spacing: .03em; }
+  .work small { display: block; margin-top: 2px; color: var(--muted); font-size: .64rem; letter-spacing: .12em; text-transform: lowercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .work:hover, .work:focus-visible { transform: translateY(-3px); border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.06); box-shadow: 0 0 18px rgba(255,255,255,.08); outline: none; }
+  .work:hover img, .work:focus-visible img { filter: none; transform: scale(1.06); }
+  .work:hover .go, .work:focus-visible .go { opacity: 1; transform: none; }
+  /* на телефонах наведения нет — превью сразу цветные */
+  @media (hover: none) { .work img { filter: saturate(.9); } .work .go { opacity: 1; transform: none; } }
+  .works-note { display: block; margin-top: 14px; font-size: .7rem; letter-spacing: .14em; text-transform: lowercase; color: var(--muted); text-decoration: none; transition: color .2s; }
+  .works-note[href]:hover { color: var(--text); }
+  .works-note:empty { display: none; }
+  @media (max-width: 380px) { .works { gap: 7px; } .work { padding: 5px 5px 8px; } .work b { font-size: 1.08rem; } }
 
   .views { margin-top: 20px; font-size: .8rem; color: var(--muted); }
 
@@ -314,6 +344,16 @@ const CONFIG = {
 
   // Вкладка «О себе». Перенос строки — просто новая строка внутри кавычек ``.
   about: `За деньги эти движения`,
+
+  // Вкладка «Работы»: сайты из портфолио, три в ряд. img — превью 16:10, url — куда ведёт карточка,
+  // kind — одно короткое слово. Чтобы добавить работу, скопируй строку. Пустой список — вкладка спрячется.
+  works: [
+    { title: "Сирень", kind: "салон",     url: "works/siren/", img: "works/previews/siren.jpg" },
+    { title: "Грань",  kind: "барбершоп", url: "works/gran/",  img: "works/previews/gran.jpg" },
+    { title: "Бодро",  kind: "кофейня",   url: "works/bodro/", img: "works/previews/bodro.jpg" },
+  ],
+  // Подпись под работами. Ссылка ведёт в первый telegram из socials. "" — без подписи.
+  worksNote: "делаю такие сайты для малого бизнеса · напиши",
 };
 </script>
 <!-- ===================================================================== -->
@@ -339,9 +379,11 @@ const CONFIG = {
 
     <div class="tabs">
       <button class="active" data-tab="links">Ссылки</button>
+      <button data-tab="works" id="worksTab">Работы</button>
       <button data-tab="about">О себе</button>
     </div>
     <div class="panel active" id="tab-links"><div class="socials" id="socials"></div></div>
+    <div class="panel" id="tab-works"><div class="works" id="works"></div><a class="works-note" id="worksNote" target="_blank" rel="noopener"></a></div>
     <div class="panel" id="tab-about"><div class="about" id="about"></div></div>
   </div>
  </div>
@@ -437,6 +479,21 @@ $("socials").innerHTML = C.socials.map(s =>
   `<a href="${s.url}" target="_blank" rel="noopener" title="${s.type}"><svg viewBox="0 0 24 24">${ICONS[s.type] || ICONS.link}</svg></a>`
 ).join("");
 if (C.trackName) $("track").textContent = "♪ " + C.trackName;
+
+// Работы
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const works = C.works || [];
+if (!works.length) { $("worksTab").remove(); $("tab-works").remove(); }
+else {
+  $("works").innerHTML = works.map((w, i) =>
+    `<a class="work" href="${esc(w.url)}" target="_blank" rel="noopener" style="--i:${i}">` +
+      `<span class="th"><img src="${esc(w.img)}" alt="" loading="lazy"><span class="go" aria-hidden="true">↗</span></span>` +
+      `<b>${esc(w.title)}</b><small>${esc(w.kind)}</small>` +
+    `</a>`
+  ).join("");
+  const tg = (C.socials || []).find((s) => s.type === "telegram");
+  if (C.worksNote) { $("worksNote").textContent = C.worksNote + (tg ? " ↗" : ""); if (tg) $("worksNote").href = tg.url; else $("worksNote").removeAttribute("href"); }
+}
 
 // Вкладки
 document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
